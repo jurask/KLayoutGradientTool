@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<klayout-macro>
+ <description>Fill by gradient</description>
+ <version>1.0.0</version>
+ <category/>
+ <prolog/>
+ <epilog/>
+ <doc/>
+ <autorun>false</autorun>
+ <autorun-early>false</autorun-early>
+ <shortcut/>
+ <show-in-menu>true</show-in-menu>
+ <group-name/>
+ <menu-path>edit_menu.selection_menu.separate+</menu-path>
+ <interpreter>python</interpreter>
+ <dsl-interpreter-name/>
+ <text># Gradient tool for KLayout GDS editor
+# Copyright (C) 2018  Jiri Babocky
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see &lt;https://www.gnu.org/licenses/&gt;.
+    
+import pya
+import os
+import types
+import math
+from pya import *
+
+# form auto steps
+def recalcAuto(self, tmp):
+  if self.auto_2.isChecked():
+    first = self.start.value
+    second = self.end.value
+    steps = abs(second-first) + 1
+    self.steps.setValue(steps) 
+
+view = Application.instance().main_window().current_view()
+if view:
+  thisScript = os.path.realpath(__file__)
+  ui_file = QFile(QFileInfo(thisScript).dir().filePath("gradientgui.ui"))
+  ui_file.open(QIODevice.ReadOnly)
+  form = QFormBuilder().load(ui_file, Application.instance().main_window())
+  ui_file.close()
+  form.start.valueChanged(types.MethodType(recalcAuto, form))
+  form.end.valueChanged(types.MethodType(recalcAuto, form))
+  recalcAuto(form, True)
+  if form.exec_(): 
+    layout = view.active_cellview().layout()
+    selection = view.object_selection
+    for object in selection:
+      if not object.is_cell_inst():
+        # to polygon
+        polygon = object.shape.simple_polygon
+        # rotate selected shape
+        trans = pya.ICplxTrans(1, -form.angle.value, False, 0, 0)
+        t = polygon.transformed(trans)
+        # bbox
+        bbox = t.bbox()
+        step = bbox.width()/form.steps.value
+        # for transforming back
+        backtrans = pya.ICplxTrans(1, form.angle.value, False, 0, 0)
+        processor = pya.EdgeProcessor()
+        for i in range(form.steps.value):
+          cutter = pya.Box(bbox.p1.x+i*step, bbox.p1.y, bbox.p1.x+(i+1)*step, bbox.p2.y)
+          cutter = pya.SimplePolygon(cutter).transformed(backtrans)
+          result = processor.boolean_p2p([cutter], [polygon], processor.ModeAnd, True, True)
+          #calculate layer properties
+          if form.datatypes.checked:
+            lay = object.shape.layer_info.layer
+            datatype = round(form.start.value+(form.end.value-form.start.value)/(form.steps.value-1)*i)
+          else:
+            datatype = object.shape.layer_info.datatype
+            lay = round(form.start.value+(form.end.value-form.start.value)/(form.steps.value-1)*i)
+          layid = layout.find_layer(lay, datatype)
+          print(lay, datatype, layid)
+          if layid is None:
+            layid = layout.insert_layer(pya.LayerInfo(lay, datatype))
+          for poly in result:          
+            shape = object.shape.shapes().insert(poly)
+            shape.layer = layid
+      object.shape.delete()
+    view.add_missing_layers()</text>
+</klayout-macro>
