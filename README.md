@@ -12,7 +12,7 @@ Install through KLayout package manager. Alternatively you can clone the reposit
 
 Usage
 -----
-Tool can bee accessed through Edit->Selection->Fill by gradient. It will fill selected object by layer or datatype gradient.
+Tool can be accessed through Edit -> Selection -> Fill by gradient. It will fill selected object by layer or datatype gradient.
 
 ![screenshot](doc/screenshot.png)
 

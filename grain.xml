@@ -7,7 +7,7 @@
  <api-version>0.25</api-version>
  <title>Gradient tool</title>
  <doc>Tool for filling objects by linear layer/datatype gradients</doc>
- <doc-url/>
+ <doc-url>https://github.com/jurask/KLayoutGradientTool/blob/master/README.md</doc-url>
  <url/>
  <license>GPLv3</license>
  <author>Jiří Babocký</author>
