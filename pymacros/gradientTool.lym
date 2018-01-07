@@ -88,6 +88,7 @@ if view:
           for poly in result:          
             shape = object.shape.shapes().insert(poly)
             shape.layer = layid
-      object.shape.delete()
+      if not form.original.checked:
+        object.shape.delete()
     view.add_missing_layers()</text>
 </klayout-macro>
